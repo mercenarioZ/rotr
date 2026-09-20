@@ -1,0 +1,8 @@
+# mise configuration for the Routine Tracker app.
+# Docs: https://mise.jdx.dev/configuration.html
+#
+# Pins the Node.js toolchain for this project so every shell that enters
+# this directory uses the same runtime, independent of the global config.
+
+[tools]
+node = "24.21.0"
