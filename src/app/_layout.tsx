@@ -34,6 +34,18 @@ export default function RootLayout() {
           headerTintColor: colors.ink,
           // A hairline under the header fights the flat, calm surface.
           headerShadowVisible: false,
+          /*
+           * iOS labels the back button with the *previous* screen's title. The
+           * (tabs) screen has `headerShown: false` and never sets a title, so
+           * without this the button reads "(tabs)" — the raw route name.
+           *
+           * A bare chevron beats a title that would have to guess which tab
+           * you came from: the stack only knows the (tabs) navigator as a
+           * whole, not the focused tab inside it.
+           *
+           * iOS and web only; Android shows no back-button text anyway.
+           */
+          headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: colors.canvas },
         }}>
         {/*
