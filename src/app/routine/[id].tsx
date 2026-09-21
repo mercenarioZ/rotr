@@ -1,121 +1,243 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { EmptyState } from '@/components/empty-state';
 import { Screen } from '@/components/screen';
-import { colors, radius, spacing } from '@/constants/theme';
-import { findRoutine } from '@/data/routines';
+import { toggleRoutine, useRoutine } from '@/data/routine-store';
+import { useTheme } from '@/theme';
+import type { Routine } from '@/types/routine';
+import { withAlpha } from '@/utils/color';
+
+const WEEKDAY_LABEL: Record<Routine['frequency'], string> = {
+  DAILY: 'Every day',
+  WEEKLY: 'Weekly',
+  CUSTOM: 'Custom',
+};
+
+function StatCard({
+  icon,
+  label,
+  value,
+  tint,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  value: string;
+  tint: string;
+}) {
+  const { colors, spacing, radius, text, shadows } = useTheme();
+
+  return (
+    <View
+      style={[
+        styles.statCard,
+        {
+          backgroundColor: colors.card,
+          borderRadius: radius.lg,
+          padding: spacing.lg,
+        },
+        shadows.card,
+      ]}>
+      <Ionicons name={icon} size={16} color={tint} />
+      <Text style={[text.heading, { color: colors.ink }]} numberOfLines={1}>
+        {value}
+      </Text>
+      <Text style={[text.meta, { color: colors.inkMuted }]}>{label}</Text>
+    </View>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  const { colors, text } = useTheme();
+
+  return (
+    <View style={styles.metaRow}>
+      <Text style={[text.meta, { color: colors.inkMuted }]}>{label}</Text>
+      <Text style={[text.meta, styles.metaValue, { color: colors.ink }]}>{value}</Text>
+    </View>
+  );
+}
 
 /**
  * Dynamic route: the filename `[id]` becomes a URL segment, and whatever is in
  * that segment arrives here as a param.
  *
- * Tapping a row on the Today or Routines tab navigates to
- * `/routine/<id>` and lands on this screen.
+ * Tapping a routine card navigates to `/routine/<id>` and lands on this screen.
  */
 export default function RoutineDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const routine = findRoutine(id);
-  const [done, setDone] = useState(routine?.doneToday ?? false);
+  const { colors, spacing, radius, text, shadows } = useTheme();
+  const routine = useRoutine(id);
 
   // A dynamic route can always be deep-linked with an id that doesn't exist,
   // so handle the miss rather than rendering `undefined`.
   if (!routine) {
     return (
-      <Screen>
+      <Screen edges={['bottom']}>
         <Stack.Screen options={{ title: 'Not found' }} />
-        <View style={styles.content}>
-          <Text style={styles.title}>No routine with id “{id}”.</Text>
+        <View style={styles.missing}>
+          <EmptyState
+            icon="help-circle-outline"
+            title="Routine not found"
+            message={`Nothing matches “${id}”. It may have been deleted.`}
+          />
         </View>
       </Screen>
     );
   }
 
-  return (
-    <Screen>
-      {/* Set the header title from the loaded data instead of the file name. */}
-      <Stack.Screen options={{ title: routine.name }} />
+  const done = routine.doneToday;
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={[styles.marker, { backgroundColor: routine.color }]} />
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{routine.name}</Text>
-            <Text style={styles.cadence}>{routine.cadence}</Text>
+  return (
+    <Screen edges={['bottom']}>
+      {/* Title the header from the loaded data rather than the file name. */}
+      <Stack.Screen options={{ title: routine.title }} />
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+        showsVerticalScrollIndicator={false}>
+        {/*
+          The hero is washed with the routine's own colour, so every routine
+          feels like it has its own identity rather than a generic page.
+        */}
+        <LinearGradient
+          colors={[
+            withAlpha(routine.color, 0.22),
+            withAlpha(routine.color, 0.03),
+            colors.canvas,
+          ]}
+          style={{
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.lg,
+            paddingBottom: spacing.xl,
+            gap: spacing.sm,
+          }}>
+          <View style={styles.eyebrow}>
+            <View style={[styles.dot, { backgroundColor: routine.color }]} />
+            <Text style={[text.micro, { color: colors.inkMuted }]}>
+              {routine.active ? 'Active' : 'Paused'}
+            </Text>
+          </View>
+
+          <Text style={[text.title, { color: colors.ink }]}>{routine.title}</Text>
+
+          {routine.description ? (
+            <Text style={[text.body, { color: colors.inkMuted }]}>
+              {routine.description}
+            </Text>
+          ) : null}
+        </LinearGradient>
+
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg }}>
+          <View style={styles.statsRow}>
+            <StatCard
+              icon="flame"
+              label="Current streak"
+              value={routine.streakCount === 0 ? '—' : String(routine.streakCount)}
+              tint={colors.streak}
+            />
+            <StatCard
+              icon="repeat"
+              label="Cadence"
+              value={WEEKDAY_LABEL[routine.frequency]}
+              tint={colors.accent}
+            />
+          </View>
+
+          <Pressable
+            onPress={() => toggleRoutine(routine.id)}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.action,
+              {
+                backgroundColor: done ? colors.card : routine.color,
+                borderRadius: radius.pill,
+              },
+              pressed && styles.actionPressed,
+            ]}>
+            <Ionicons
+              name={done ? 'refresh' : 'checkmark'}
+              size={18}
+              color={done ? colors.ink : '#FFFFFF'}
+            />
+            <Text
+              style={[
+                text.bodyStrong,
+                styles.actionLabel,
+                { color: done ? colors.ink : '#FFFFFF' },
+              ]}>
+              {done ? 'Mark as not done' : 'Mark as done'}
+            </Text>
+          </Pressable>
+
+          <View
+            style={[
+              styles.metaCard,
+              {
+                backgroundColor: colors.card,
+                borderRadius: radius.lg,
+                paddingHorizontal: spacing.lg,
+              },
+              shadows.card,
+            ]}>
+            <MetaRow label="Frequency" value={routine.frequency} />
+            <MetaRow label="Started" value={routine.startDate ?? 'Not set'} />
+            <MetaRow label="Status" value={routine.active ? 'Active' : 'Paused'} />
           </View>
         </View>
-
-        <Pressable
-          onPress={() => setDone((previous) => !previous)}
-          style={({ pressed }) => [
-            styles.action,
-            done && styles.actionDone,
-            pressed && styles.actionPressed,
-          ]}>
-          <Text style={[styles.actionLabel, done && styles.actionLabelDone]}>
-            {done ? 'Done today' : 'Mark as done'}
-          </Text>
-        </Pressable>
-
-        <Text style={styles.note}>
-          Local state only — this is where the completion write will go once routines are
-          persisted.
-        </Text>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: spacing.md,
-    gap: spacing.md,
+  missing: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  header: {
+  eyebrow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: 7,
   },
-  marker: {
-    width: 6,
-    height: 44,
-    borderRadius: radius.full,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  headerText: {
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statCard: {
     flex: 1,
-    gap: spacing.xs,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  cadence: {
-    fontSize: 14,
-    color: colors.textMuted,
+    gap: 6,
   },
   action: {
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accent,
-  },
-  actionDone: {
-    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 18,
   },
   actionPressed: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
   actionLabel: {
     fontSize: 16,
+  },
+  metaCard: {
+    paddingVertical: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  metaValue: {
     fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  actionLabelDone: {
-    color: colors.success,
-  },
-  note: {
-    fontSize: 13,
-    color: colors.textMuted,
   },
 });

@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import { StyleSheet } from 'react-native';
 
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/theme';
 
 /**
  * Tab bar layout.
@@ -14,21 +15,30 @@ import { colors } from '@/constants/theme';
  * `(tabs)/index.tsx` still resolves to `/`.
  */
 export default function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
+        // Each tab draws its own large title, so the navigator header would
+        // only be a duplicate.
+        headerShown: false,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.text,
-        sceneStyle: { backgroundColor: colors.background },
+        tabBarInactiveTintColor: colors.inkFaint,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.line,
+          borderTopWidth: StyleSheet.hairlineWidth,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        sceneStyle: { backgroundColor: colors.canvas },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Today',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="today-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'today' : 'today-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -36,8 +46,8 @@ export default function TabsLayout() {
         name="routines"
         options={{
           title: 'Routines',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'list' : 'list-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -45,8 +55,12 @@ export default function TabsLayout() {
         name="progress"
         options={{
           title: 'Progress',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="stats-chart-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'stats-chart' : 'stats-chart-outline'}
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

@@ -1,20 +1,27 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { EmptyState } from '@/components/empty-state';
 import { Screen } from '@/components/screen';
-import { colors, spacing } from '@/constants/theme';
+import { useTheme } from '@/theme';
 
 /**
  * Catches any URL that doesn't match a route — including deep links typed by
  * hand. The leading `+` is expo-router's marker for a non-route special file.
  */
 export default function NotFoundScreen() {
+  const { colors, spacing, text } = useTheme();
+
   return (
-    <Screen>
+    <Screen edges={['bottom']}>
       <Stack.Screen options={{ title: 'Not found' }} />
-      <View style={styles.content}>
-        <Text style={styles.title}>This screen doesn&apos;t exist.</Text>
-        <Link href="/" style={styles.link}>
+      <View style={[styles.content, { padding: spacing.lg }]}>
+        <EmptyState
+          icon="compass-outline"
+          title="This screen doesn't exist"
+          message="The link may be out of date, or the routine it pointed at is gone."
+        />
+        <Link href="/" style={[text.bodyStrong, styles.link, { color: colors.accent }]}>
           Go to Today
         </Link>
       </View>
@@ -27,17 +34,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    textAlign: 'center',
+    gap: 12,
   },
   link: {
-    fontSize: 15,
-    color: colors.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 });
