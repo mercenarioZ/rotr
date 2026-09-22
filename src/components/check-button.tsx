@@ -1,29 +1,29 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
-import { Pressable, StyleSheet } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Haptics from "expo-haptics";
+import { Pressable, StyleSheet } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
-import { useTheme } from '@/theme';
-import { withAlpha } from '@/utils/color';
+import { useTheme } from "@/theme";
 
 type Props = {
   done: boolean;
-  /** The routine's own accent, so each completion keeps its identity. */
-  color: string;
   onToggle: () => void;
   size?: number;
+  accessibilityLabel?: string;
 };
 
-/**
- * The primary action in the whole app, so it gets the most care: a spring pop
- * on tap and a haptic tick. Haptics are a no-op on simulators.
- */
-export function CheckButton({ done, color, onToggle, size = 34 }: Props) {
-  const { colors, isDark } = useTheme();
+/** High-contrast completion control with a short confirmation spring and haptic. */
+export function CheckButton({
+  done,
+  onToggle,
+  size = 38,
+  accessibilityLabel,
+}: Props) {
+  const { colors } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -31,9 +31,8 @@ export function CheckButton({ done, color, onToggle, size = 34 }: Props) {
   }));
 
   const handlePress = () => {
-    scale.value = 0.8;
-    scale.value = withSpring(1, { damping: 12, stiffness: 320 });
-    // Fire and forget — a device without a taptic engine must not throw.
+    scale.value = 0.78;
+    scale.value = withSpring(1, { damping: 12, stiffness: 340 });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onToggle();
   };
@@ -41,10 +40,14 @@ export function CheckButton({ done, color, onToggle, size = 34 }: Props) {
   return (
     <Pressable
       onPress={handlePress}
-      hitSlop={14}
+      hitSlop={12}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done }}
-      accessibilityLabel={done ? 'Mark as not done' : 'Mark as done'}>
+      accessibilityLabel={
+        accessibilityLabel ?? (done ? "Mark as not done" : "Mark as done")
+      }
+      accessibilityHint="Toggles today’s completion status"
+    >
       <Animated.View
         style={[
           styles.circle,
@@ -52,21 +55,19 @@ export function CheckButton({ done, color, onToggle, size = 34 }: Props) {
             width: size,
             height: size,
             borderRadius: size / 2,
-            /*
-             * Idle rings are tinted with the routine's own colour rather than a
-             * neutral grey, so the action already reads as belonging to that
-             * routine before it is tapped.
-             */
-            borderColor: done ? color : withAlpha(color, isDark ? 0.55 : 0.45),
-            backgroundColor: done ? color : 'transparent',
+            borderColor: done ? colors.accent : colors.inkMuted,
+            backgroundColor: done ? colors.accent : colors.card,
           },
           animatedStyle,
-        ]}>
-        {/*
-          Always white: the fill is the routine's own colour, which stays dark
-          enough for a white tick in both light and dark mode.
-        */}
-        {done ? <Ionicons name="checkmark" size={size * 0.55} color="#FFFFFF" /> : null}
+        ]}
+      >
+        {done ? (
+          <Ionicons
+            name="checkmark"
+            size={size * 0.54}
+            color={colors.onAccent}
+          />
+        ) : null}
       </Animated.View>
     </Pressable>
   );
@@ -74,8 +75,8 @@ export function CheckButton({ done, color, onToggle, size = 34 }: Props) {
 
 const styles = StyleSheet.create({
   circle: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
   },
 });

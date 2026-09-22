@@ -1,20 +1,14 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { ProgressRing } from '@/components/progress-ring';
-import { Screen } from '@/components/screen';
-import { WeekChart } from '@/components/week-chart';
-import { weeklyProgress } from '@/data/routines';
-import { useRoutines } from '@/data/routine-store';
-import { useTheme } from '@/theme';
+import { ProgressRing } from "@/components/progress-ring";
+import { Screen } from "@/components/screen";
+import { WeekChart } from "@/components/week-chart";
+import { weeklyProgress } from "@/data/routines";
+import { useRoutines } from "@/data/routine-store";
+import { useTheme } from "@/theme";
 
-/**
- * Progress.
- *
- * Everything here is derived from placeholder data. Real history arrives with
- * the API's insights endpoint, and the roadmap is explicit that the backend
- * owns these calculations — this screen only presents them.
- */
 export default function ProgressScreen() {
   const { colors, spacing, radius, text, shadows } = useTheme();
   const all = useRoutines();
@@ -22,67 +16,150 @@ export default function ProgressScreen() {
   const weekTotal = weeklyProgress.reduce((sum, day) => sum + day.total, 0);
   const weekDone = weeklyProgress.reduce((sum, day) => sum + day.completed, 0);
   const weekRatio = weekTotal === 0 ? 0 : weekDone / weekTotal;
-
-  const bestStreak = all.reduce((max, routine) => Math.max(max, routine.streakCount), 0);
+  const bestStreak = all.reduce(
+    (max, routine) => Math.max(max, routine.streakCount),
+    0,
+  );
   const activeCount = all.filter((routine) => routine.active).length;
-
-  const card = {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-  };
 
   return (
     <Screen>
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: spacing.lg,
-          paddingTop: spacing.sm,
+          paddingTop: spacing.md,
           paddingBottom: spacing.xxxl,
-          gap: spacing.lg,
+          gap: spacing.xl,
         }}
-        showsVerticalScrollIndicator={false}>
-        <View style={{ gap: spacing.md }}>
-          <Text style={[text.micro, { color: colors.inkFaint }]}>This week</Text>
-          <Text style={[text.title, { color: colors.ink }]}>Progress</Text>
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.heading}>
+          <Text style={[text.micro, { color: colors.inkFaint }]}>
+            Your momentum
+          </Text>
+          <Text style={[text.title, { color: colors.ink }]}>
+            A week in rhythm
+          </Text>
+          <Text style={[text.body, { color: colors.inkMuted }]}>
+            Progress lives in the return, not the perfect streak.
+          </Text>
         </View>
 
-        <View style={[styles.hero, card, shadows.card]}>
+        <LinearGradient
+          colors={[colors.heroAlt, colors.hero]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            styles.hero,
+            { borderRadius: radius.xxl, padding: spacing.xl },
+            shadows.raised,
+          ]}
+        >
           <ProgressRing
             progress={weekRatio}
-            size={104}
+            size={110}
             strokeWidth={10}
-            color={colors.accent}
-            trackColor={colors.track}>
-            <Text style={[text.heading, { color: colors.ink }]}>
-              {Math.round(weekRatio * 100)}%
-            </Text>
+            color={colors.onHero}
+            trackColor="rgba(255,255,255,0.18)"
+          >
+            <View style={styles.rateLabel}>
+              <Text style={[styles.rateValue, { color: colors.onHero }]}>
+                {Math.round(weekRatio * 100)}%
+              </Text>
+              <Text style={[styles.rateUnit, { color: colors.onHeroMuted }]}>
+                complete
+              </Text>
+            </View>
           </ProgressRing>
 
-          <View style={styles.heroText}>
-            <Text style={[text.heading, { color: colors.ink }]}>Weekly rate</Text>
-            <Text style={[text.meta, { color: colors.inkMuted }]}>
-              {weekDone} of {weekTotal} completions
+          <View style={styles.heroCopy}>
+            <Text style={[text.micro, { color: colors.onHeroMuted }]}>
+              Weekly pace
+            </Text>
+            <Text style={[styles.heroMetric, { color: colors.onHero }]}>
+              {weekDone}
+            </Text>
+            <Text style={[text.body, { color: colors.onHeroMuted }]}>
+              of {weekTotal} planned moments kept
             </Text>
           </View>
-        </View>
+        </LinearGradient>
 
-        <View style={[card, { gap: spacing.lg }, shadows.card]}>
-          <Text style={[text.micro, { color: colors.inkFaint }]}>Daily completion</Text>
+        <View
+          style={[
+            styles.chartCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.line,
+              borderRadius: radius.xl,
+              padding: spacing.lg,
+            },
+            shadows.card,
+          ]}
+        >
+          <View style={styles.cardHeading}>
+            <View>
+              <Text style={[text.heading, { color: colors.ink }]}>
+                Daily consistency
+              </Text>
+              <Text style={[text.meta, { color: colors.inkMuted }]}>
+                Last seven days
+              </Text>
+            </View>
+            <View
+              style={[styles.legendDot, { backgroundColor: colors.accent }]}
+            />
+          </View>
           <WeekChart days={weeklyProgress} />
         </View>
 
         <View style={styles.statsRow}>
-          <View style={[styles.stat, card, shadows.card]}>
-            <Ionicons name="flame" size={16} color={colors.streak} />
-            <Text style={[styles.statValue, { color: colors.ink }]}>{bestStreak}</Text>
-            <Text style={[text.meta, { color: colors.inkMuted }]}>best streak</Text>
+          <View
+            style={[
+              styles.stat,
+              {
+                backgroundColor: colors.streakSoft,
+                borderRadius: radius.xl,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <View style={styles.statTop}>
+              <Ionicons name="flame" size={17} color={colors.streak} />
+              <Text style={[text.micro, { color: colors.streak }]}>
+                Best streak
+              </Text>
+            </View>
+            <Text style={[styles.statValue, { color: colors.ink }]}>
+              {bestStreak}
+            </Text>
+            <Text style={[text.meta, { color: colors.inkMuted }]}>
+              days in a row
+            </Text>
           </View>
 
-          <View style={[styles.stat, card, shadows.card]}>
-            <Ionicons name="repeat" size={16} color={colors.accent} />
-            <Text style={[styles.statValue, { color: colors.ink }]}>{activeCount}</Text>
-            <Text style={[text.meta, { color: colors.inkMuted }]}>active routines</Text>
+          <View
+            style={[
+              styles.stat,
+              {
+                backgroundColor: colors.accentSoft,
+                borderRadius: radius.xl,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <View style={styles.statTop}>
+              <Ionicons name="leaf" size={17} color={colors.accent} />
+              <Text style={[text.micro, { color: colors.accent }]}>
+                In motion
+              </Text>
+            </View>
+            <Text style={[styles.statValue, { color: colors.ink }]}>
+              {activeCount}
+            </Text>
+            <Text style={[text.meta, { color: colors.inkMuted }]}>
+              active rituals
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -91,26 +168,73 @@ export default function ProgressScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
+  heading: {
+    gap: 7,
   },
-  heroText: {
+  hero: {
+    minHeight: 194,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 22,
+  },
+  heroCopy: {
     flex: 1,
-    gap: 3,
+  },
+  heroMetric: {
+    marginTop: 2,
+    fontSize: 46,
+    lineHeight: 50,
+    fontWeight: "800",
+    letterSpacing: -1.8,
+  },
+  rateLabel: {
+    alignItems: "center",
+  },
+  rateValue: {
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: "800",
+    letterSpacing: -0.8,
+  },
+  rateUnit: {
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  chartCard: {
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 22,
+  },
+  cardHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  legendDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
   },
   statsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   stat: {
     flex: 1,
-    gap: 6,
+    minHeight: 144,
+    justifyContent: "space-between",
+  },
+  statTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   statValue: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: -1,
+    fontSize: 37,
+    lineHeight: 40,
+    fontWeight: "800",
+    letterSpacing: -1.2,
   },
 });

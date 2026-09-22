@@ -1,4 +1,4 @@
-import type { TextStyle, ViewStyle } from 'react-native';
+import type { TextStyle, ViewStyle } from "react-native";
 
 /**
  * Design tokens.
@@ -8,7 +8,7 @@ import type { TextStyle, ViewStyle } from 'react-native';
  * app picks it up through `useTheme()`.
  */
 
-export type ColorScheme = 'light' | 'dark';
+export type ColorScheme = "light" | "dark";
 
 export type Palette = {
   /** Screen background. */
@@ -37,6 +37,12 @@ export type Palette = {
   /** Text/icon colour on top of `accent`. */
   onAccent: string;
 
+  /** Deep editorial surface used for the single hero card on each screen. */
+  hero: string;
+  heroAlt: string;
+  onHero: string;
+  onHeroMuted: string;
+
   /** Streaks only. Amber, so it never competes with the accent. */
   streak: string;
   streakSoft: string;
@@ -50,49 +56,58 @@ export type Palette = {
 
 export const palettes: Record<ColorScheme, Palette> = {
   light: {
-    canvas: '#F7F5F2',
-    card: '#FFFFFF',
-    cardPressed: '#F1EDE7',
+    canvas: "#F2EFE8",
+    card: "#FCFBF8",
+    cardPressed: "#EAE5DC",
 
-    ink: '#191714',
-    inkMuted: '#6E6862',
-    inkFaint: '#A39C93',
+    ink: "#182019",
+    inkMuted: "#687069",
+    inkFaint: "#979D96",
 
-    line: '#E8E3DC',
-    track: '#E8E3DC',
+    line: "#DDD8CE",
+    track: "#E5E0D7",
 
-    accent: '#2D6A4F',
-    accentSoft: '#DCEFE4',
-    onAccent: '#FFFFFF',
+    accent: "#1F513D",
+    accentSoft: "#DCE9E1",
+    onAccent: "#F8FCF9",
 
-    streak: '#B26B1F',
-    streakSoft: '#F7E9D5',
+    hero: "#153E2E",
+    heroAlt: "#29664E",
+    onHero: "#F8FCF9",
+    onHeroMuted: "#C5D9CD",
 
-    danger: '#B4342A',
-    scrim: 'rgba(20, 18, 16, 0.4)',
+    streak: "#B86B1D",
+    streakSoft: "#F5E5CD",
+
+    danger: "#B73C32",
+    scrim: "rgba(17, 24, 19, 0.42)",
   },
   dark: {
-    canvas: '#121110',
-    card: '#1C1A18',
-    cardPressed: '#26231F',
+    canvas: "#0E1411",
+    card: "#171F1A",
+    cardPressed: "#222D26",
 
-    ink: '#F4F1EC',
-    inkMuted: '#9C948A',
-    inkFaint: '#6B655D',
+    ink: "#F2F5F0",
+    inkMuted: "#A6AFA8",
+    inkFaint: "#727C75",
 
-    line: '#2B2724',
-    track: '#2B2724',
+    line: "#2B352E",
+    track: "#29342D",
 
-    // Lifted so it keeps contrast against the dark canvas.
-    accent: '#63B48D',
-    accentSoft: '#1B2F25',
-    onAccent: '#0A1A11',
+    accent: "#86CBA8",
+    accentSoft: "#1C3429",
+    onAccent: "#0D2418",
 
-    streak: '#D9A05B',
-    streakSoft: '#302418',
+    streak: "#E0A45E",
+    streakSoft: "#382A1C",
 
-    danger: '#E0736A',
-    scrim: 'rgba(0, 0, 0, 0.6)',
+    danger: "#EE8177",
+    scrim: "rgba(0, 0, 0, 0.64)",
+
+    hero: "#1D4B38",
+    heroAlt: "#2C6A50",
+    onHero: "#F4FAF6",
+    onHeroMuted: "#C3D9CC",
   },
 };
 
@@ -112,6 +127,7 @@ export const radius = {
   md: 12,
   lg: 18,
   xl: 24,
+  xxl: 32,
   pill: 999,
 } as const;
 
@@ -120,17 +136,28 @@ export const radius = {
  * metadata — the letter-spacing is what stops it looking like shouting.
  */
 export const text = {
-  display: { fontSize: 46, fontWeight: '700', letterSpacing: -1.5 },
-  title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.6 },
-  heading: { fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
-  body: { fontSize: 15, fontWeight: '500' },
-  bodyStrong: { fontSize: 15, fontWeight: '600' },
-  meta: { fontSize: 13, fontWeight: '500' },
+  display: {
+    fontSize: 42,
+    fontWeight: "700",
+    letterSpacing: -1.6,
+    lineHeight: 46,
+  },
+  title: { fontSize: 32, fontWeight: "700", letterSpacing: -1, lineHeight: 36 },
+  heading: {
+    fontSize: 19,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+    lineHeight: 24,
+  },
+  body: { fontSize: 15, fontWeight: "500", lineHeight: 22 },
+  bodyStrong: { fontSize: 15, fontWeight: "700", lineHeight: 22 },
+  meta: { fontSize: 13, fontWeight: "500", lineHeight: 18 },
   micro: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    lineHeight: 15,
+    textTransform: "uppercase",
   },
 } satisfies Record<string, TextStyle>;
 
@@ -141,17 +168,17 @@ export const text = {
  */
 export const shadows = {
   card: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowColor: "#122018",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.055,
+    shadowRadius: 14,
     elevation: 2,
   },
   raised: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 6,
+    shadowColor: "#122018",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 7,
   },
 } satisfies Record<string, ViewStyle>;

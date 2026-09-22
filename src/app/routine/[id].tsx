@@ -1,82 +1,70 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Stack, useLocalSearchParams } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { EmptyState } from '@/components/empty-state';
-import { Screen } from '@/components/screen';
-import { toggleRoutine, useRoutine } from '@/data/routine-store';
-import { useTheme } from '@/theme';
-import type { Routine } from '@/types/routine';
-import { withAlpha } from '@/utils/color';
+import { EmptyState } from "@/components/empty-state";
+import { ProgressRing } from "@/components/progress-ring";
+import { Screen } from "@/components/screen";
+import { toggleRoutine, useRoutine } from "@/data/routine-store";
+import { useTheme } from "@/theme";
+import type { Routine } from "@/types/routine";
 
-const WEEKDAY_LABEL: Record<Routine['frequency'], string> = {
-  DAILY: 'Every day',
-  WEEKLY: 'Weekly',
-  CUSTOM: 'Custom',
+const CADENCE_LABEL: Record<Routine["frequency"], string> = {
+  DAILY: "Every day",
+  WEEKLY: "Every week",
+  CUSTOM: "Custom rhythm",
 };
 
-function StatCard({
+function formatStartDate(value: string | null | undefined): string {
+  if (!value) return "Not set";
+  const [year, month, day] = value.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+function MetaRow({
   icon,
   label,
   value,
-  tint,
+  isLast = false,
 }: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   label: string;
   value: string;
-  tint: string;
+  isLast?: boolean;
 }) {
-  const { colors, spacing, radius, text, shadows } = useTheme();
+  const { colors, text } = useTheme();
 
   return (
     <View
       style={[
-        styles.statCard,
-        {
-          backgroundColor: colors.card,
-          borderRadius: radius.lg,
-          padding: spacing.lg,
+        styles.metaRow,
+        !isLast && {
+          borderBottomColor: colors.line,
+          borderBottomWidth: StyleSheet.hairlineWidth,
         },
-        shadows.card,
-      ]}>
-      <Ionicons name={icon} size={16} color={tint} />
-      <Text style={[text.heading, { color: colors.ink }]} numberOfLines={1}>
+      ]}
+    >
+      <View style={styles.metaLabel}>
+        <Ionicons name={icon} size={17} color={colors.inkFaint} />
+        <Text style={[text.meta, { color: colors.inkMuted }]}>{label}</Text>
+      </View>
+      <Text style={[text.bodyStrong, styles.metaValue, { color: colors.ink }]}>
         {value}
       </Text>
-      <Text style={[text.meta, { color: colors.inkMuted }]}>{label}</Text>
     </View>
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string }) {
-  const { colors, text } = useTheme();
-
-  return (
-    <View style={styles.metaRow}>
-      <Text style={[text.meta, { color: colors.inkMuted }]}>{label}</Text>
-      <Text style={[text.meta, styles.metaValue, { color: colors.ink }]}>{value}</Text>
-    </View>
-  );
-}
-
-/**
- * Dynamic route: the filename `[id]` becomes a URL segment, and whatever is in
- * that segment arrives here as a param.
- *
- * Tapping a routine card navigates to `/routine/<id>` and lands on this screen.
- */
 export default function RoutineDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, spacing, radius, text, shadows } = useTheme();
   const routine = useRoutine(id);
 
-  // A dynamic route can always be deep-linked with an id that doesn't exist,
-  // so handle the miss rather than rendering `undefined`.
   if (!routine) {
     return (
-      <Screen edges={['bottom']}>
-        <Stack.Screen options={{ title: 'Not found' }} />
+      <Screen edges={["bottom"]}>
+        <Stack.Screen options={{ title: "Not found" }} />
         <View style={styles.missing}>
           <EmptyState
             icon="help-circle-outline"
@@ -89,102 +77,214 @@ export default function RoutineDetailScreen() {
   }
 
   const done = routine.doneToday;
+  const canComplete = routine.active && routine.dueToday;
+  const progress = Math.min(routine.streakCount / 30, 1);
 
   return (
-    <Screen edges={['bottom']}>
-      {/* Title the header from the loaded data rather than the file name. */}
-      <Stack.Screen options={{ title: routine.title }} />
+    <Screen edges={["bottom"]}>
+      <Stack.Screen
+        options={{
+          title: "",
+          headerStyle: { backgroundColor: colors.heroAlt },
+          headerShadowVisible: false,
+          headerTintColor: colors.onHero,
+        }}
+      />
 
       <ScrollView
         contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-        showsVerticalScrollIndicator={false}>
-        {/*
-          The hero is washed with the routine's own colour, so every routine
-          feels like it has its own identity rather than a generic page.
-        */}
+        showsVerticalScrollIndicator={false}
+      >
         <LinearGradient
-          colors={[
-            withAlpha(routine.color, 0.22),
-            withAlpha(routine.color, 0.03),
-            colors.canvas,
+          colors={[colors.heroAlt, colors.hero]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            styles.hero,
+            { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
           ]}
-          style={{
-            paddingHorizontal: spacing.lg,
-            paddingTop: spacing.lg,
-            paddingBottom: spacing.xl,
-            gap: spacing.sm,
-          }}>
-          <View style={styles.eyebrow}>
-            <View style={[styles.dot, { backgroundColor: routine.color }]} />
-            <Text style={[text.micro, { color: colors.inkMuted }]}>
-              {routine.active ? 'Active' : 'Paused'}
+        >
+          <View style={styles.statusRow}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: routine.active
+                    ? colors.onHero
+                    : colors.onHeroMuted,
+                },
+              ]}
+            />
+            <Text style={[text.micro, { color: colors.onHeroMuted }]}>
+              {routine.active ? "Active ritual" : "Paused ritual"}
             </Text>
           </View>
 
-          <Text style={[text.title, { color: colors.ink }]}>{routine.title}</Text>
+          <View style={styles.heroMain}>
+            <View style={styles.heroCopy}>
+              <Text
+                style={[
+                  text.display,
+                  styles.heroTitle,
+                  { color: colors.onHero },
+                ]}
+              >
+                {routine.title}
+              </Text>
+              <Text style={[text.body, { color: colors.onHeroMuted }]}>
+                {routine.description ??
+                  "A small commitment, returned to with care."}
+              </Text>
+            </View>
 
-          {routine.description ? (
-            <Text style={[text.body, { color: colors.inkMuted }]}>
-              {routine.description}
-            </Text>
-          ) : null}
+            <ProgressRing
+              progress={progress}
+              size={88}
+              strokeWidth={8}
+              color={colors.onHero}
+              trackColor="rgba(255,255,255,0.17)"
+            >
+              <View style={styles.streakLabel}>
+                <Text style={[styles.streakValue, { color: colors.onHero }]}>
+                  {routine.streakCount}
+                </Text>
+                <Text
+                  style={[styles.streakUnit, { color: colors.onHeroMuted }]}
+                >
+                  days
+                </Text>
+              </View>
+            </ProgressRing>
+          </View>
         </LinearGradient>
 
-        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg }}>
-          <View style={styles.statsRow}>
-            <StatCard
-              icon="flame"
-              label="Current streak"
-              value={routine.streakCount === 0 ? '—' : String(routine.streakCount)}
-              tint={colors.streak}
-            />
-            <StatCard
-              icon="repeat"
-              label="Cadence"
-              value={WEEKDAY_LABEL[routine.frequency]}
-              tint={colors.accent}
-            />
+        <View
+          style={{
+            paddingHorizontal: spacing.lg,
+            marginTop: -spacing.lg,
+            gap: spacing.lg,
+          }}
+        >
+          <View
+            style={[
+              styles.keepCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.line,
+                borderRadius: radius.xl,
+                padding: spacing.lg,
+              },
+              shadows.raised,
+            ]}
+          >
+            <View style={styles.keepCopy}>
+              <Text style={[text.heading, { color: colors.ink }]}>
+                Today&apos;s promise
+              </Text>
+              <Text style={[text.meta, { color: colors.inkMuted }]}>
+                {!canComplete
+                  ? routine.active
+                    ? "This ritual is not scheduled today."
+                    : "Resume this ritual to mark progress."
+                  : done
+                    ? "Kept. You showed up today."
+                    : "Take the next small step when you are ready."}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.completionState,
+                { backgroundColor: done ? colors.accentSoft : colors.canvas },
+              ]}
+            >
+              <Ionicons
+                name={done ? "checkmark" : "ellipse-outline"}
+                size={20}
+                color={done ? colors.accent : colors.inkMuted}
+              />
+            </View>
           </View>
 
           <Pressable
+            disabled={!canComplete}
             onPress={() => toggleRoutine(routine.id)}
             accessibilityRole="button"
+            accessibilityState={{ disabled: !canComplete }}
+            accessibilityLabel={
+              done
+                ? `Mark ${routine.title} as not done`
+                : `Complete ${routine.title} for today`
+            }
+            accessibilityHint={
+              canComplete ? "Toggles today’s completion status" : undefined
+            }
             style={({ pressed }) => [
               styles.action,
               {
-                backgroundColor: done ? colors.card : routine.color,
+                backgroundColor: done ? colors.card : colors.accent,
+                borderColor: done ? colors.line : colors.accent,
                 borderRadius: radius.pill,
+                opacity: canComplete ? 1 : 0.42,
               },
-              pressed && styles.actionPressed,
-            ]}>
+              pressed && canComplete && styles.actionPressed,
+            ]}
+          >
             <Ionicons
-              name={done ? 'refresh' : 'checkmark'}
-              size={18}
-              color={done ? colors.ink : '#FFFFFF'}
+              name={done ? "refresh" : "checkmark"}
+              size={19}
+              color={done ? colors.ink : colors.onAccent}
             />
             <Text
               style={[
                 text.bodyStrong,
                 styles.actionLabel,
-                { color: done ? colors.ink : '#FFFFFF' },
-              ]}>
-              {done ? 'Mark as not done' : 'Mark as done'}
+                { color: done ? colors.ink : colors.onAccent },
+              ]}
+            >
+              {done ? "Mark as not done" : "Complete for today"}
             </Text>
           </Pressable>
 
-          <View
-            style={[
-              styles.metaCard,
-              {
-                backgroundColor: colors.card,
-                borderRadius: radius.lg,
-                paddingHorizontal: spacing.lg,
-              },
-              shadows.card,
-            ]}>
-            <MetaRow label="Frequency" value={routine.frequency} />
-            <MetaRow label="Started" value={routine.startDate ?? 'Not set'} />
-            <MetaRow label="Status" value={routine.active ? 'Active' : 'Paused'} />
+          <View>
+            <Text
+              style={[
+                text.micro,
+                styles.detailsEyebrow,
+                { color: colors.inkFaint },
+              ]}
+            >
+              Ritual details
+            </Text>
+            <View
+              style={[
+                styles.metaCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.line,
+                  borderRadius: radius.xl,
+                  paddingHorizontal: spacing.lg,
+                },
+                shadows.card,
+              ]}
+            >
+              <MetaRow
+                icon="repeat-outline"
+                label="Cadence"
+                value={CADENCE_LABEL[routine.frequency]}
+              />
+              <MetaRow
+                icon="calendar-outline"
+                label="Started"
+                value={formatStartDate(routine.startDate)}
+              />
+              <MetaRow
+                icon="pulse-outline"
+                label="Status"
+                value={routine.active ? "Active" : "Paused"}
+                isLast
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -195,49 +295,104 @@ export default function RoutineDetailScreen() {
 const styles = StyleSheet.create({
   missing: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
-  eyebrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
+  hero: {
+    minHeight: 330,
+    paddingTop: 28,
+    gap: 24,
   },
-  dot: {
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
+  heroMain: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 16,
   },
-  statCard: {
+  heroCopy: {
     flex: 1,
-    gap: 6,
+    gap: 11,
+  },
+  heroTitle: {
+    fontSize: 36,
+    lineHeight: 40,
+  },
+  streakLabel: {
+    alignItems: "center",
+  },
+  streakValue: {
+    fontSize: 25,
+    lineHeight: 27,
+    fontWeight: "800",
+  },
+  streakUnit: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  keepCard: {
+    minHeight: 98,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 16,
+  },
+  keepCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  completionState: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
   },
   action: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
-    paddingVertical: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
   },
   actionPressed: {
-    opacity: 0.85,
+    transform: [{ scale: 0.985 }],
   },
   actionLabel: {
     fontSize: 16,
   },
+  detailsEyebrow: {
+    marginBottom: 10,
+  },
   metaCard: {
-    paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+    minHeight: 58,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  metaLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
   },
   metaValue: {
-    fontWeight: '600',
+    flexShrink: 1,
+    textAlign: "right",
   },
 });
