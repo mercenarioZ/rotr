@@ -2,12 +2,17 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
+import { AgendaCard } from "@/components/agenda-card";
 import { EmptyState } from "@/components/empty-state";
 import { ProgressRing } from "@/components/progress-ring";
-import { RoutineCard } from "@/components/routine-card";
+import { QuickTaskComposer } from "@/components/quick-task-composer";
 import { Screen } from "@/components/screen";
-import { completionRatio, dueToday } from "@/data/routines";
-import { toggleRoutine, useRoutines } from "@/data/routine-store";
+import { demoUser } from "@/data/routines";
+import {
+  createManualTask,
+  setTaskCompletion,
+  useAgenda,
+} from "@/data/routine-store";
 import { useTheme } from "@/theme";
 
 const WEEKDAYS = [
@@ -46,17 +51,15 @@ function greetingFor(hour: number): string {
 
 export default function TodayScreen() {
   const { colors, spacing, radius, text, shadows } = useTheme();
-  const all = useRoutines();
-
-  const today = dueToday(all);
-  const done = today.filter((routine) => routine.doneToday).length;
-  const ratio = completionRatio(today);
-  const remaining = today.length - done;
+  const agenda = useAgenda();
+  const done = agenda.filter(({ task }) => task.completed).length;
+  const ratio = agenda.length === 0 ? 0 : done / agenda.length;
+  const remaining = agenda.length - done;
   const now = new Date();
 
   const message =
-    today.length === 0
-      ? "Your day is clear. Make room for something that restores you."
+    agenda.length === 0
+      ? "Your agenda is clear. Make room for something that restores you."
       : remaining === 0
         ? "Everything planned for today is complete. Let the rest of the day be light."
         : remaining === 1
@@ -77,11 +80,13 @@ export default function TodayScreen() {
             {formatDate(now)}
           </Text>
           <Text style={[text.title, { color: colors.ink }]}>
-            {greetingFor(now.getHours())}
+            {`${greetingFor(now.getHours())}, ${demoUser.displayName.split(" ")[0]}`}
           </Text>
         </View>
         <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-          <Text style={[styles.avatarLabel, { color: colors.accent }]}>RT</Text>
+          <Text style={[styles.avatarLabel, { color: colors.accent }]}>
+            {demoUser.initials}
+          </Text>
         </View>
       </View>
 
@@ -99,7 +104,7 @@ export default function TodayScreen() {
           <View style={styles.heroEyebrow}>
             <Ionicons name="sparkles" size={14} color={colors.onHeroMuted} />
             <Text style={[text.micro, { color: colors.onHeroMuted }]}>
-              Your daily rhythm
+              Today&apos;s agenda
             </Text>
           </View>
           <Text
@@ -108,9 +113,9 @@ export default function TodayScreen() {
             {message}
           </Text>
           <Text style={[text.meta, { color: colors.onHeroMuted }]}>
-            {today.length === 0
+            {agenda.length === 0
               ? "Nothing scheduled"
-              : `${done} of ${today.length} complete`}
+              : `${done} of ${agenda.length} complete`}
           </Text>
         </View>
 
@@ -123,7 +128,7 @@ export default function TodayScreen() {
         >
           <View style={styles.ringLabel}>
             <Text style={[styles.ringValue, { color: colors.onHero }]}>
-              {today.length === 0 ? "—" : Math.round(ratio * 100)}
+              {agenda.length === 0 ? "—" : Math.round(ratio * 100)}
             </Text>
             <Text style={[styles.ringUnit, { color: colors.onHeroMuted }]}>
               %
@@ -135,37 +140,39 @@ export default function TodayScreen() {
       <View style={styles.sectionHeader}>
         <View>
           <Text style={[text.heading, { color: colors.ink }]}>
-            Today&apos;s rituals
+            Today&apos;s agenda
           </Text>
           <Text style={[text.meta, { color: colors.inkMuted }]}>
-            Move gently, one at a time
+            Routines and one-off tasks
           </Text>
         </View>
         <View
           style={[styles.countBadge, { backgroundColor: colors.accentSoft }]}
         >
           <Text style={[styles.countText, { color: colors.accent }]}>
-            {today.length}
+            {agenda.length}
           </Text>
         </View>
       </View>
+
+      <QuickTaskComposer onCreate={(title) => createManualTask({ title })} />
     </View>
   );
 
   return (
     <Screen>
       <FlatList
-        data={today}
-        keyExtractor={(routine) => routine.id}
+        data={agenda}
+        keyExtractor={({ task }) => task.id}
         renderItem={({ item, index }) => (
-          <RoutineCard routine={item} index={index} onToggle={toggleRoutine} />
+          <AgendaCard item={item} index={index} onToggle={setTaskCompletion} />
         )}
         ListHeaderComponent={header}
         ListEmptyComponent={
           <EmptyState
             icon="leaf-outline"
             title="A quiet day"
-            message="No rituals are scheduled. Enjoy the extra space."
+            message="No tasks are scheduled. Add a one-off item or enjoy the extra space."
           />
         }
         contentContainerStyle={{

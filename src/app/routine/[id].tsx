@@ -1,12 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "@/components/empty-state";
 import { ProgressRing } from "@/components/progress-ring";
 import { Screen } from "@/components/screen";
-import { toggleRoutine, useRoutine } from "@/data/routine-store";
+import {
+  deactivateRoutine,
+  setTaskCompletion,
+  useRoutine,
+  useTaskForRoutine,
+} from "@/data/routine-store";
 import { useTheme } from "@/theme";
 import type { Routine } from "@/types/routine";
 
@@ -59,7 +64,9 @@ function MetaRow({
 export default function RoutineDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, spacing, radius, text, shadows } = useTheme();
+  const router = useRouter();
   const routine = useRoutine(id);
+  const todayTask = useTaskForRoutine(id);
 
   if (!routine) {
     return (
@@ -76,8 +83,8 @@ export default function RoutineDetailScreen() {
     );
   }
 
-  const done = routine.doneToday;
-  const canComplete = routine.active && routine.dueToday;
+  const done = todayTask?.completed ?? false;
+  const canComplete = routine.active && todayTask !== undefined;
   const progress = Math.min(routine.streakCount / 30, 1);
 
   return (
@@ -208,7 +215,9 @@ export default function RoutineDetailScreen() {
 
           <Pressable
             disabled={!canComplete}
-            onPress={() => toggleRoutine(routine.id)}
+            onPress={() =>
+              todayTask && setTaskCompletion(todayTask.id, !todayTask.completed)
+            }
             accessibilityRole="button"
             accessibilityState={{ disabled: !canComplete }}
             accessibilityLabel={
@@ -285,6 +294,30 @@ export default function RoutineDetailScreen() {
                 isLast
               />
             </View>
+
+            {routine.active ? (
+              <Pressable
+                onPress={() => {
+                  deactivateRoutine(routine.id);
+                  router.back();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Deactivate ${routine.title}`}
+                style={({ pressed }) => [
+                  styles.deactivate,
+                  { opacity: pressed ? 0.65 : 1 },
+                ]}
+              >
+                <Ionicons
+                  name="pause-circle-outline"
+                  size={18}
+                  color={colors.danger}
+                />
+                <Text style={[text.bodyStrong, { color: colors.danger }]}>
+                  Deactivate routine
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </ScrollView>
@@ -378,6 +411,14 @@ const styles = StyleSheet.create({
   },
   metaCard: {
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  deactivate: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: 16,
   },
   metaRow: {
     minHeight: 58,

@@ -1,48 +1,64 @@
 /**
- * Domain model for the app.
- *
- * Field names deliberately track the API's `RoutineResponse` so that wiring
- * this to the network layer later is a mapping job rather than a rewrite.
- * `color` is the one intentional exception — it is presentation-only and has
- * no API equivalent.
+ * Client domain models mirror the backend response boundaries.
+ * Routine owns definition/lifecycle. Task owns scheduled work and completion.
+ * Presentation metadata stays explicitly client-only.
  */
 
-/** Mirrors the API's `RoutineFrequency`. `CUSTOM` has no server rule yet. */
-export type RoutineFrequency = 'DAILY' | 'WEEKLY' | 'CUSTOM';
+export type RoutineFrequency = "DAILY" | "WEEKLY" | "CUSTOM";
+export type TaskType = "MANUAL" | "ROUTINE";
 
 export type Routine = {
   id: string;
+  userId: string;
   title: string;
   description?: string | null;
   frequency: RoutineFrequency;
-  /** Presentation-only accent. Never sent to the server. */
-  color: string;
-  /**
-   * Presentation-only Ionicons glyph for the routine's badge. Optional —
-   * callers fall back to an icon derived from `frequency`. Never sent to the
-   * server.
-   */
-  icon?: string;
-  /** Server-computed once wired; placeholder value for now. */
-  streakCount: number;
-  active: boolean;
   startDate?: string | null;
-
-  /*
-   * Stand-ins for the occurrence model. API roadmap Phase 5 replaces routine
-   * tasks with real occurrences, after which both of these come from the
-   * server's agenda instead of being stored on the client.
-   */
-  dueToday: boolean;
-  doneToday: boolean;
+  active: boolean;
+  /** Server-computed. Never derived from local tasks. */
+  streakCount: number;
+  createdAt: string;
+  /** Client-only deterministic presentation metadata. */
+  color: string;
+  icon?: string;
 };
 
-/** A single day in the weekly history on the Progress tab. */
+export type Task = {
+  id: string;
+  userId: string;
+  routineId?: string | null;
+  title: string;
+  taskType: TaskType;
+  /** ISO local date, yyyy-MM-dd. */
+  scheduledDate: string;
+  completed: boolean;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** A task enriched with its routine definition for agenda presentation. */
+export type AgendaItem = {
+  task: Task;
+  routine?: Routine;
+};
+
+/** Backend-owned aggregate shaped for the weekly progress chart. */
 export type DayProgress = {
-  /** ISO date, `yyyy-MM-dd`. */
   date: string;
-  /** Single-letter weekday for the chart axis. */
   label: string;
   completed: number;
   total: number;
+};
+
+export type CreateRoutineInput = {
+  title: string;
+  description?: string;
+  frequency: RoutineFrequency;
+  startDate?: string;
+};
+
+export type CreateManualTaskInput = {
+  title: string;
+  scheduledDate?: string;
 };

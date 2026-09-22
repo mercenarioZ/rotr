@@ -3,8 +3,9 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
+import { CheckButton } from "@/components/check-button";
 import { useTheme } from "@/theme";
-import type { Routine, RoutineFrequency } from "@/types/routine";
+import type { AgendaItem, RoutineFrequency } from "@/types/routine";
 import { withAlpha } from "@/utils/color";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -15,28 +16,24 @@ const ICON_BY_FREQUENCY: Record<RoutineFrequency, IconName> = {
   CUSTOM: "options-outline",
 };
 
-const LABEL_BY_FREQUENCY: Record<RoutineFrequency, string> = {
-  DAILY: "Every day",
-  WEEKLY: "Weekly",
-  CUSTOM: "Custom",
-};
-
 type Props = {
-  routine: Routine;
-  index?: number;
+  item: AgendaItem;
+  index: number;
+  onToggle: (taskId: string, completed: boolean) => void;
 };
 
-/** Routine definition card. Completion belongs to agenda tasks, not this resource. */
-export function RoutineCard({ routine, index = 0 }: Props) {
+/** Agenda row backed by a TaskResponse, optionally enriched with routine presentation data. */
+export function AgendaCard({ item, index, onToggle }: Props) {
+  const { task, routine } = item;
   const { colors, radius, spacing, text, shadows, isDark } = useTheme();
   const router = useRouter();
-  const icon =
-    (routine.icon as IconName | undefined) ??
-    ICON_BY_FREQUENCY[routine.frequency];
-  const accent = isDark ? colors.accent : routine.color;
-  const cadence = routine.active
-    ? LABEL_BY_FREQUENCY[routine.frequency]
-    : "Paused";
+  const accent = isDark ? colors.accent : (routine?.color ?? colors.accent);
+  const icon = routine
+    ? ((routine.icon as IconName | undefined) ??
+      ICON_BY_FREQUENCY[routine.frequency])
+    : "checkbox-outline";
+  const subtitle =
+    task.taskType === "MANUAL" ? "One-off task" : "Routine occurrence";
 
   return (
     <Animated.View
@@ -56,18 +53,20 @@ export function RoutineCard({ routine, index = 0 }: Props) {
     >
       <View style={{ borderRadius: radius.xl, overflow: "hidden" }}>
         <Pressable
+          disabled={!routine}
           onPress={() =>
+            routine &&
             router.push({
               pathname: "/routine/[id]",
               params: { id: routine.id },
             })
           }
-          accessibilityRole="button"
-          accessibilityLabel={`${routine.title}, ${cadence}`}
+          accessibilityRole={routine ? "button" : "text"}
+          accessibilityLabel={`${task.title}, ${subtitle}${task.completed ? ", completed" : ""}`}
           style={({ pressed }) => [
             styles.body,
             { padding: spacing.lg },
-            pressed && { backgroundColor: colors.cardPressed },
+            pressed && routine && { backgroundColor: colors.cardPressed },
           ]}
         >
           <View
@@ -79,18 +78,21 @@ export function RoutineCard({ routine, index = 0 }: Props) {
             <Ionicons name={icon} size={21} color={accent} />
           </View>
 
-          <View style={styles.copy}>
+          <View style={[styles.copy, { paddingRight: 46 }]}>
             <Text
               numberOfLines={2}
-              style={[styles.title, { color: colors.ink }]}
+              style={[
+                styles.title,
+                { color: task.completed ? colors.inkMuted : colors.ink },
+              ]}
             >
-              {routine.title}
+              {task.title}
             </Text>
             <View style={styles.metaRow}>
               <Text style={[text.meta, { color: colors.inkMuted }]}>
-                {cadence}
+                {subtitle}
               </Text>
-              {routine.streakCount > 0 ? (
+              {routine && routine.streakCount > 0 ? (
                 <View
                   style={[
                     styles.streak,
@@ -108,9 +110,20 @@ export function RoutineCard({ routine, index = 0 }: Props) {
               ) : null}
             </View>
           </View>
-
-          <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
         </Pressable>
+
+        <View
+          style={[
+            styles.check,
+            { right: spacing.lg, pointerEvents: "box-none" },
+          ]}
+        >
+          <CheckButton
+            done={task.completed}
+            onToggle={() => onToggle(task.id, !task.completed)}
+            accessibilityLabel={`${task.completed ? "Reopen" : "Complete"} ${task.title}`}
+          />
+        </View>
       </View>
     </Animated.View>
   );
@@ -159,5 +172,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     fontWeight: "700",
+  },
+  check: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
   },
 });

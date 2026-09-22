@@ -1,14 +1,16 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "@/components/empty-state";
 import { RoutineCard } from "@/components/routine-card";
 import { Screen } from "@/components/screen";
-import { toggleRoutine, useRoutines } from "@/data/routine-store";
+import { useRoutines } from "@/data/routine-store";
 import { useTheme } from "@/theme";
 
 export default function RoutinesScreen() {
   const { colors, spacing, radius, text } = useTheme();
+  const router = useRouter();
   const all = useRoutines();
 
   const activeCount = all.filter((routine) => routine.active).length;
@@ -34,11 +36,20 @@ export default function RoutinesScreen() {
             A calm home for every habit you&apos;re building.
           </Text>
         </View>
-        <View
-          style={[styles.iconBadge, { backgroundColor: colors.accentSoft }]}
+        <Pressable
+          onPress={() => router.push("/routine/new")}
+          accessibilityRole="button"
+          accessibilityLabel="Create routine"
+          style={({ pressed }) => [
+            styles.iconBadge,
+            {
+              backgroundColor: colors.accentSoft,
+              opacity: pressed ? 0.72 : 1,
+            },
+          ]}
         >
-          <Ionicons name="leaf" size={22} color={colors.accent} />
-        </View>
+          <Ionicons name="add" size={24} color={colors.accent} />
+        </Pressable>
       </View>
 
       <View
@@ -88,12 +99,7 @@ export default function RoutinesScreen() {
         data={all}
         keyExtractor={(routine) => routine.id}
         renderItem={({ item, index }) => (
-          <RoutineCard
-            routine={item}
-            index={index}
-            onToggle={toggleRoutine}
-            showCompletion={item.active && item.dueToday}
-          />
+          <RoutineCard routine={item} index={index} />
         )}
         ListHeaderComponent={header}
         ListEmptyComponent={
