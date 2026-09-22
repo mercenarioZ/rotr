@@ -1,11 +1,11 @@
-import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 
-import { createQueryClient } from '@/query/client';
-import { useAppStateFocus } from '@/query/focus';
-import { useTheme } from '@/theme';
+import { createQueryClient } from "@/query/client";
+import { useAppStateFocus } from "@/query/focus";
+import { useTheme } from "@/theme";
 
 /**
  * Root layout — this file replaces the old App.tsx.
@@ -27,7 +27,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Follows the active palette rather than the system default. */}
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.canvas },
@@ -45,14 +45,22 @@ export default function RootLayout() {
            *
            * iOS and web only; Android shows no back-button text anyway.
            */
-          headerBackButtonDisplayMode: 'minimal',
+          headerBackButtonDisplayMode: "minimal",
           contentStyle: { backgroundColor: colors.canvas },
-        }}>
+        }}
+      >
         {/*
           The (tabs) group renders its own large title per tab, so the stack
           header is hidden here to avoid showing two stacked headers.
         */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="routine/new"
+          options={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.canvas },
+          }}
+        />
       </Stack>
     </QueryClientProvider>
   );
