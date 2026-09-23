@@ -7,6 +7,7 @@ import type {
   CreateRoutineInput,
   Routine,
   Task,
+  UpdateRoutineInput,
 } from "@/types/routine";
 
 /**
@@ -96,6 +97,38 @@ export function createRoutine(input: CreateRoutineInput): Routine {
   };
   emit();
   return routine;
+}
+
+/**
+ * Mirrors PATCH /routines/{routineId}.
+ *
+ * Omitted fields keep their current value and an explicit `null` clears a
+ * nullable one. Like the server, this leaves existing routine tasks untouched:
+ * a renamed routine does not rewrite the tasks already scheduled from it.
+ */
+export function updateRoutine(
+  routineId: string,
+  input: UpdateRoutineInput,
+): void {
+  state = {
+    ...state,
+    routines: state.routines.map((routine) =>
+      routine.id === routineId
+        ? {
+            ...routine,
+            title: input.title ?? routine.title,
+            description:
+              input.description === undefined
+                ? routine.description
+                : input.description,
+            frequency: input.frequency ?? routine.frequency,
+            startDate:
+              input.startDate === undefined ? routine.startDate : input.startDate,
+          }
+        : routine,
+    ),
+  };
+  emit();
 }
 
 export function createManualTask(input: CreateManualTaskInput): Task {

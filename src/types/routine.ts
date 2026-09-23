@@ -62,3 +62,28 @@ export type CreateManualTaskInput = {
   title: string;
   scheduledDate?: string;
 };
+
+/**
+ * Mirrors the PATCH body: an omitted field keeps its current value, while an
+ * explicit `null` clears a nullable one. `title` and `frequency` are not
+ * nullable on the server, so `null` is not accepted for them.
+ */
+export type UpdateRoutineInput = {
+  title?: string;
+  description?: string | null;
+  frequency?: RoutineFrequency;
+  startDate?: string | null;
+};
+
+/**
+ * Client-only shape the routine form edits.
+ *
+ * `description` is a plain string here rather than the nullable wire value, so
+ * the inputs stay controlled; each screen maps it back onto its own request
+ * shape (`CreateRoutineInput` or `UpdateRoutineInput`).
+ */
+export type RoutineFormValues = {
+  title: string;
+  description: string;
+  frequency: RoutineFrequency;
+};

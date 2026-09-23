@@ -61,6 +61,18 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: colors.canvas },
           }}
         />
+        {/*
+          Declared here as well as in the page so the header never flashes
+          before the form screen mounts — the same reason `routine/new` is
+          listed above.
+        */}
+        <Stack.Screen
+          name="routine/[id]/edit"
+          options={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.canvas },
+          }}
+        />
       </Stack>
     </QueryClientProvider>
   );

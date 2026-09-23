@@ -2,9 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/theme';
+import type { IconName } from '@/types/ui';
 
 type Props = {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   title: string;
   message: string;
 };

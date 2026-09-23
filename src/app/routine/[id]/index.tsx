@@ -14,6 +14,7 @@ import {
 } from "@/data/routine-store";
 import { useTheme } from "@/theme";
 import type { Routine } from "@/types/routine";
+import type { IconName } from "@/types/ui";
 
 const CADENCE_LABEL: Record<Routine["frequency"], string> = {
   DAILY: "Every day",
@@ -33,7 +34,7 @@ function MetaRow({
   value,
   isLast = false,
 }: {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
+  icon: IconName;
   label: string;
   value: string;
   isLast?: boolean;
@@ -95,6 +96,22 @@ export default function RoutineDetailScreen() {
           headerStyle: { backgroundColor: colors.heroAlt },
           headerShadowVisible: false,
           headerTintColor: colors.onHero,
+          headerRight: () => (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/routine/[id]/edit",
+                  params: { id: routine.id },
+                })
+              }
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${routine.title}`}
+              style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
+            >
+              <Ionicons name="create-outline" size={23} color={colors.onHero} />
+            </Pressable>
+          ),
         }}
       />
 

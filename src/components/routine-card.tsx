@@ -5,9 +5,8 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useTheme } from "@/theme";
 import type { Routine, RoutineFrequency } from "@/types/routine";
+import type { IconName } from "@/types/ui";
 import { withAlpha } from "@/utils/color";
-
-type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const ICON_BY_FREQUENCY: Record<RoutineFrequency, IconName> = {
   DAILY: "repeat",
