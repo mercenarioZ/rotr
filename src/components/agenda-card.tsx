@@ -33,6 +33,7 @@ export function AgendaCard({ item, index, onToggle }: Props) {
     : "checkbox-outline";
   const subtitle =
     task.taskType === "MANUAL" ? "One-off task" : "Routine occurrence";
+  const isDone = task.completed;
 
   return (
     <Animated.View
@@ -61,7 +62,7 @@ export function AgendaCard({ item, index, onToggle }: Props) {
             })
           }
           accessibilityRole={routine ? "button" : "text"}
-          accessibilityLabel={`${task.title}, ${subtitle}${task.completed ? ", completed" : ""}`}
+          accessibilityLabel={`${task.title}, ${subtitle}${isDone ? ", completed" : ""}`}
           style={({ pressed }) => [
             styles.body,
             { padding: spacing.lg },
@@ -71,10 +72,18 @@ export function AgendaCard({ item, index, onToggle }: Props) {
           <View
             style={[
               styles.badge,
-              { backgroundColor: withAlpha(accent, isDark ? 0.2 : 0.12) },
+              {
+                backgroundColor: isDone
+                  ? colors.track
+                  : withAlpha(accent, isDark ? 0.2 : 0.12),
+              },
             ]}
           >
-            <Ionicons name={icon} size={21} color={accent} />
+            <Ionicons
+              name={icon}
+              size={21}
+              color={isDone ? colors.inkFaint : accent}
+            />
           </View>
 
           <View style={[styles.copy, { paddingRight: 46 }]}>
@@ -82,13 +91,19 @@ export function AgendaCard({ item, index, onToggle }: Props) {
               numberOfLines={2}
               style={[
                 styles.title,
-                { color: task.completed ? colors.inkMuted : colors.ink },
+                { color: isDone ? colors.inkMuted : colors.ink },
+                isDone && styles.titleDone,
               ]}
             >
               {task.title}
             </Text>
             <View style={styles.metaRow}>
-              <Text style={[text.meta, { color: colors.inkMuted }]}>
+              <Text
+                style={[
+                  text.meta,
+                  { color: isDone ? colors.inkFaint : colors.inkMuted },
+                ]}
+              >
                 {subtitle}
               </Text>
               {routine && routine.streakCount > 0 ? (
@@ -96,13 +111,24 @@ export function AgendaCard({ item, index, onToggle }: Props) {
                   style={[
                     styles.streak,
                     {
-                      backgroundColor: colors.streakSoft,
+                      backgroundColor: isDone
+                        ? colors.track
+                        : colors.streakSoft,
                       borderRadius: radius.pill,
                     },
                   ]}
                 >
-                  <Ionicons name="flame" size={11} color={colors.streak} />
-                  <Text style={[styles.streakText, { color: colors.streak }]}>
+                  <Ionicons
+                    name="flame"
+                    size={11}
+                    color={isDone ? colors.inkFaint : colors.streak}
+                  />
+                  <Text
+                    style={[
+                      styles.streakText,
+                      { color: isDone ? colors.inkFaint : colors.streak },
+                    ]}
+                  >
                     {routine.streakCount} days
                   </Text>
                 </View>
@@ -118,9 +144,9 @@ export function AgendaCard({ item, index, onToggle }: Props) {
           ]}
         >
           <CheckButton
-            done={task.completed}
-            onToggle={() => onToggle(task.id, !task.completed)}
-            accessibilityLabel={`${task.completed ? "Reopen" : "Complete"} ${task.title}`}
+            done={isDone}
+            onToggle={() => onToggle(task.id, !isDone)}
+            accessibilityLabel={`${isDone ? "Reopen" : "Complete"} ${task.title}`}
           />
         </View>
       </View>
@@ -154,6 +180,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: "700",
     letterSpacing: -0.3,
+  },
+  titleDone: {
+    textDecorationLine: "line-through",
+    fontWeight: "500",
   },
   metaRow: {
     flexDirection: "row",

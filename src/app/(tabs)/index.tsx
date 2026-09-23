@@ -14,6 +14,7 @@ import {
   useAgenda,
 } from "@/data/routine-store";
 import { useTheme } from "@/theme";
+import type { AgendaItem } from "@/types/routine";
 
 const WEEKDAYS = [
   "Sunday",
@@ -49,12 +50,27 @@ function greetingFor(hour: number): string {
   return "Good evening";
 }
 
+/**
+ * Sinks completed items to the bottom so what is still open stays in view.
+ * Both groups keep the order the store returned, so ticking an item moves it
+ * to the end of the finished block instead of shuffling its neighbours.
+ */
+function pendingFirst(items: AgendaItem[]): AgendaItem[] {
+  const open: AgendaItem[] = [];
+  const finished: AgendaItem[] = [];
+  for (const item of items) {
+    (item.task.completed ? finished : open).push(item);
+  }
+  return [...open, ...finished];
+}
+
 export default function TodayScreen() {
   const { colors, spacing, radius, text, shadows } = useTheme();
   const agenda = useAgenda();
   const done = agenda.filter(({ task }) => task.completed).length;
   const ratio = agenda.length === 0 ? 0 : done / agenda.length;
   const remaining = agenda.length - done;
+  const ordered = pendingFirst(agenda);
   const now = new Date();
 
   const message =
@@ -162,7 +178,7 @@ export default function TodayScreen() {
   return (
     <Screen>
       <FlatList
-        data={agenda}
+        data={ordered}
         keyExtractor={({ task }) => task.id}
         renderItem={({ item, index }) => (
           <AgendaCard item={item} index={index} onToggle={setTaskCompletion} />
